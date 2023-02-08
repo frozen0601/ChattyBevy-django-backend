@@ -56,9 +56,12 @@ class MessageViewset(viewsets.ModelViewSet):
         serializer = MessageSerializer(new_message)
         return Response(serializer.data)
 
+    # the DELETE result of /messaging/messages/{message.id}
+    # the message can be deleted by the sender or the admin
     def destroy(self, request, *args, **kwargs):
-        loggedInUser = request.user
-        if loggedInUser == 'admin':
+        curUser = request.user
+        message = self.get_object()
+        if curUser == 'admin' or curUser.username == message.sender:
             message = self.get_object()
             message.delete()
             response_message = {'message': "Item deleted successfully"}
