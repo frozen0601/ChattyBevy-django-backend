@@ -73,7 +73,6 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-     # Use JWT 
      'AUTH_HEADER_TYPES': ('JWT',),
 }
 
