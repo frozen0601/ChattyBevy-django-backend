@@ -6,6 +6,7 @@ from .serializers import MessageSerializer
 from messaging.models import Message
 from django.db.models import Q
 from rest_framework.authtoken.models import Token
+from rest_framework.pagination import LimitOffsetPagination
 
 
 @api_view()
@@ -18,6 +19,8 @@ def firstFunction(request):
 
 class MessageViewset(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
+    throttle_scope = "messaging"
+    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         messages = Message.objects.all()
@@ -29,7 +32,9 @@ class MessageViewset(viewsets.ModelViewSet):
         curUser = request.user
         inbox = Message.objects.filter(
             Q(sender=curUser.username) | Q(recipient=curUser.username))
+
         serializer = MessageSerializer(inbox, many=True)
+
         return Response(serializer.data)
 
     # the GET result of /messaging/messages/{otherUser}

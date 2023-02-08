@@ -69,11 +69,30 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
         # 'rest_framework.permissions.AllowAny',
-    ]
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        # 'anon': '43200/day',
+        # 'user': '86400/day',
+        'messaging' : '60/min',
+    },
+    'DEFAULT_PAGINATION_CLASSES': 'rest_framework.pagination.PageNumbe rPagination',
+    'PAGE_SIZE': 3
+}
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'my_cache_table',
+    }
 }
 
 SIMPLE_JWT = {
-     'AUTH_HEADER_TYPES': ('JWT',),
+    'AUTH_HEADER_TYPES': ('JWT',),
 }
 
 ROOT_URLCONF = 'bevyApi.urls'
