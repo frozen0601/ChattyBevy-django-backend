@@ -5,13 +5,10 @@ from rest_framework import viewsets
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from .serializers import MessageSerializer, MessageDetailSerializer, MessageListSerializer, RoomSerializer
 from messaging.models import Message, Room
-from django.db.models import Q
 from rest_framework.authtoken.models import Token
 from rest_framework.pagination import LimitOffsetPagination
 # for sql operations
-from django.db.models import ExpressionWrapper, F, Func, Q, Window, Subquery
-from django.db.models.functions import Abs, Rank, RowNumber
-from django.db import models
+from django.db.models import Q
 
 
 class MessageListView(ListAPIView):
@@ -27,7 +24,7 @@ class MessageDetailView(RetrieveAPIView):
 class MessageViewset(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     throttle_scope = "messaging"
-    pagination_class = LimitOffsetPagination
+    # pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         messages = Message.objects.all()
@@ -49,17 +46,6 @@ class MessageViewset(viewsets.ModelViewSet):
         # messages where the curUser takes part of
         usersMessages = Message.objects.filter(
             Q(sender=curUser.username) | Q(recipient=curUser.username))
-
-        # inbox = usersMessages.annotate(
-        #     # RANK() by price within each store_id
-        #     rank=Window(
-        #         expression=Rank(),
-        #         partition_by=[F('sender'), F('recipient')],
-        #         order_by=F('created_at').desc(),
-        #     ),
-        # )
-        # selected=ExpressionWrapper(None, output_field=models.IntegerField()))
-        # inbox = inbox.filter(rank=1)
 
         serializer = MessageSerializer(usersMessages, many=True)
 
@@ -128,7 +114,7 @@ class MessageViewset(viewsets.ModelViewSet):
 class RoomViewset(viewsets.ModelViewSet):
     serializer_class = RoomSerializer
     throttle_scope = "room"
-    pagination_class = LimitOffsetPagination
+    # pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         rooms = Room.objects.all()
