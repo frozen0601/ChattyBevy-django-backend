@@ -94,6 +94,7 @@ REST_FRAMEWORK = {
         'room': '60/min',
         'messaging': '60/min',
     },
+    # TODO: reenable pagination when frontend support is available
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 'PAGE_SIZE': 3,
 }
