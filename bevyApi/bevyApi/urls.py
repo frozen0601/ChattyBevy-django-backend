@@ -11,8 +11,8 @@ urlpatterns = [
     path('api-auth/', include('rest_framework.urls')),
 
     # rest-auth/: for user management
-    path('rest-auth/', include('rest_auth.urls')),
-    path('rest-auth/registration/', include('rest_auth.registration.urls')),
+    path('rest-auth/', include('dj_rest_auth.urls')),
+    path('rest-auth/registration/', include('dj_rest_auth.registration.urls')),
 
     # api/token/: for JWT authentication
     path('api/token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),

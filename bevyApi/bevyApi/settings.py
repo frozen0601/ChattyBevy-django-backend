@@ -41,11 +41,11 @@ INSTALLED_APPS = [
     'rest_framework',
     # for user account management
     'rest_framework.authtoken',
-    'rest_auth',
+    'dj_rest_auth',
     'django.contrib.sites',
     'allauth',
     'allauth.account',
-    'rest_auth.registration',
+    'dj_rest_auth.registration',
     #for blacklisting rotated tokens
     'rest_framework_simplejwt.token_blacklist',
     'messaging',
@@ -93,6 +93,8 @@ REST_FRAMEWORK = {
         # 'user': '86400/day',
         'room': '60/min',
         'messaging': '60/min',
+        'dj_rest_auth': '30/min',
+
     },
     # TODO: reenable pagination when frontend support is available
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
