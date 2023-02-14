@@ -1,5 +1,5 @@
 from rest_framework.response import Response
-from rest_framework import viewsets, serializers
+from rest_framework import viewsets, serializers, status
 from .serializers import MessageSerializer, RoomSerializer
 from messaging.models import Message, Room
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
@@ -29,8 +29,13 @@ class RoomViewset(viewsets.ModelViewSet):
     # create a new room
     def create(self, request, *args, **kwargs):
         room_data = request.data
-        new_room = Room.objects.create(user1=room_data["user1"],
-                                       user2=room_data["user2"])
+        if "user1" not in room_data or "user2" not in room_data:
+            raise serializers.ValidationError("Invalid/missing field in POST request.")
+        user1 = room_data["user1"]
+        user2 = room_data["user2"]
+        if user1 == user2:
+            raise serializers.ValidationError("User1 and User2 cannot be the same.")
+        new_room = Room.objects.create(user1=user1, user2=user2)
         new_room.save()
         serializer = RoomSerializer(new_room)
         return Response(serializer.data)
@@ -42,7 +47,7 @@ class RoomViewset(viewsets.ModelViewSet):
         roomID = params['pk']
 
         # check if room actually belongs to the user
-        if _hasRoomPermission(request.user, roomID):
+        if _has_room_permission(request.user, roomID):
             chatHistory = Message.objects.filter(room_id=roomID)
             serializer = MessageSerializer(chatHistory, many=True)
             return Response(serializer.data)
@@ -51,12 +56,9 @@ class RoomViewset(viewsets.ModelViewSet):
 
 
 # check if a user has access to the room with roomID
-def _hasRoomPermission(user, roomID):
-    print(user)
-    room = Room.objects.filter(Q(user1=user) | Q(user2=user)).filter(id=roomID)
-    print(room)
-    print(room.exists())
-    return room.exists()
+def _has_room_permission(user, roomID):
+        room = Room.objects.filter(Q(user1=user) | Q(user2=user), id=roomID)
+        return room.exists()
 
 # in_use: create(), destroy()
 # @permission_classes([AllowAny]) -> obsolete: default policy (IsAuthenticated) applied globally
@@ -64,7 +66,6 @@ class MessageViewset(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     throttle_scope = "messaging"
     pagination_class = StandardResultsSetPagination
-    pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
         messages = Message.objects.all()
@@ -72,41 +73,45 @@ class MessageViewset(viewsets.ModelViewSet):
 
     # create a new message
     def create(self, request, *args, **kwargs):
-        message_data = request.data
-        if "sender" not in message_data or "recipient" not in message_data or "title" not in message_data:
-            raise serializers.ValidationError("Invalid/missing field in POST request.")
-        sender = message_data["sender"]
-        recipient = message_data["recipient"]
-        title = message_data["title"]
-        body = message_data["body"]
-        if len(sender) == 0 or len(recipient) == 0 or len(title) == 0:
-            raise serializers.ValidationError("Please fill out sender/recipient/title.")
+        serializer = MessageSerializer(data=request.data)
 
-        room = Room.objects.filter(
-            (Q(user1=sender) & Q(user2=recipient)) |
-            (Q(user1=recipient) & Q(user2=sender))
-        )
+        if serializer.is_valid():
+            # make sure the message is send by current user
+            if request.user.username != serializer.validated_data['sender']:
+                return Response({'error': 'The sender must be the current user'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # create a new room if the room does not already exist
-        if not room.exists():
-            new_room = Room.objects.create(user1=sender,
-                                           user2=recipient)
-            new_room.save()
+            message_data = serializer.validated_data
+            sender = message_data["sender"]
+            recipient = message_data["recipient"]
 
-        # get the corresponding room
-        room = Room.objects.filter(
-            (Q(user1=sender) & Q(user2=recipient)) |
-            (Q(user1=recipient) & Q(user2=sender))
-        ).first()
+            room = Room.objects.filter(
+                (Q(user1=sender) & Q(user2=recipient)) |
+                (Q(user1=recipient) & Q(user2=sender))
+            )
 
-        new_message = Message.objects.create(room=room,
-                                             sender=sender,
-                                             recipient=recipient,
-                                             title=title,
-                                             body=body)
-        new_message.save()
-        serializer = MessageSerializer(new_message)
-        return Response(serializer.data)
+            # create a new room if the room does not already exist
+            if not room.exists():
+                new_room = Room.objects.create(user1=sender,
+                                            user2=recipient)
+                new_room.save()
+
+            # get the corresponding room
+            room = Room.objects.filter(
+                (Q(user1=sender) & Q(user2=recipient)) |
+                (Q(user1=recipient) & Q(user2=sender))
+            ).first()
+
+            new_message = Message.objects.create(room=room,
+                                                sender=sender,
+                                                recipient=recipient,
+                                                title=message_data["title"],
+                                                body=message_data.get("body", ""))
+            new_message.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+        # No permission to delete
+        raise serializers.ValidationError("Invalid request.")
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # delete a message with {message.id}
     def destroy(self, request, *args, **kwargs):
@@ -117,7 +122,8 @@ class MessageViewset(viewsets.ModelViewSet):
             message.delete()
             response_message = {'message': "Item deleted successfully"}
         else:
-            response_message = {'message': "No permission to delete"}
+            raise serializers.ValidationError("No permission to delete.")
+            # response_message = {'message': "No permission to delete"}
 
         return Response({'message': response_message})
 

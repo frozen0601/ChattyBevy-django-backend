@@ -9,6 +9,8 @@ from http import HTTPStatus
 from typing import Any
 from rest_framework.views import Response
 from rest_framework.views import exception_handler
+from rest_framework import exceptions
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -23,7 +25,8 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # messaging/: for the messaging app
-    path('messaging/', include(('messaging.api.urls', 'Message'), namespace='messaging')),
+    # path('messaging/', include(('messaging.api.urls', 'Message'), namespace='messaging')),
+    path('messaging/', include(('messaging.api.urls', 'messaging'), namespace='messaging')),
 ]
 
 def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response:
@@ -32,6 +35,18 @@ def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response:
     # Call REST framework's default exception handler first,
     # to get the standard error response.
     response = exception_handler(exc, context)
+
+    if isinstance(exc, (exceptions.NotFound, exceptions.MethodNotAllowed)):
+        response = Response({
+            "error": {
+                "status_code": exc.default_code,
+                "message": exc.default_detail,
+            }
+        }, status=exc.status_code)
+    else:
+        # Call REST framework's default exception handler first,
+        # to get the standard error response.
+        response = exception_handler(exc, context)
 
     if response is not None:
         # Using the description's of the HTTPStatus class as error message.

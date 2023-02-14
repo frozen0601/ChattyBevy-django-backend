@@ -42,26 +42,23 @@ class MessageSerializer(serializers.ModelSerializer):
             'created_at',
         ]
 
-    def validate_sender(self, sender: str) -> str:
-        if len(sender) == 0:
-            raise serializers.ValidationError(
-                "Please make sure a valid sender is provided",
-            )
-        return sender
+        def validate(self, data):
+            sender = data.get('sender')
+            recipient = data.get('recipient')
+            title = data.get('title')
+            body = data.get('body')
 
-    def validate_recipient(self, recipient: str) -> str:
-        if len(recipient) == 0:
-            raise serializers.ValidationError(
-                "Please make sure a valid recipient is provided",
-            )
-        return recipient
+            if not sender:
+                raise serializers.ValidationError("Sender is required.")
 
-    def validate_title(self, title: str) -> str:
-        if len(title) == 0:
-            raise serializers.ValidationError(
-                "Please make sure a valid title is provided",
-            )
-        return title
+            if not recipient:
+                raise serializers.ValidationError("Recipient is required.")
+
+            if not title:
+                raise serializers.ValidationError("Title is required.")
+
+            if not body:
+                raise serializers.ValidationError("Body is required.")
 
     # def create(self, validated_data: str) -> Message:
     #     return Message.objects.create(**validated_data)
