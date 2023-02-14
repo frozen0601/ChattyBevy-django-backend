@@ -1,9 +1,7 @@
-from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework import viewsets
+from rest_framework import viewsets, serializers
 from .serializers import MessageSerializer, RoomSerializer
 from messaging.models import Message, Room
-from rest_framework.authtoken.models import Token
 from rest_framework.pagination import LimitOffsetPagination, PageNumberPagination
 # for sql operations
 from django.db.models import Q
@@ -14,11 +12,10 @@ class StandardResultsSetPagination(PageNumberPagination):
     page_size_query_param = 'page_size'
     max_page_size = 500
 
-# TODO: destroy() not implemented for RoomViewset (the ability to delete a room)
+# TODO: implemented destroy() (the ability to delete a room)
 class RoomViewset(viewsets.ModelViewSet):
     serializer_class = RoomSerializer
     throttle_scope = "room"
-    # pagination_class = LimitOffsetPagination
     pagination_class = StandardResultsSetPagination
 
     # list all rooms
@@ -27,8 +24,6 @@ class RoomViewset(viewsets.ModelViewSet):
         rooms = Room.objects.filter(
             (Q(user1=user) | Q(user2=user))
         )
-        # rooms = Room.objects.filter()
-        # print("get_queryset")
         return rooms
 
     # create a new room
@@ -63,9 +58,8 @@ def _hasRoomPermission(user, roomID):
     print(room.exists())
     return room.exists()
 
-# in_use: destroy()
-# deprecated methods: GET/LIST/RETRIEVE
-# @permission_classes([AllowAny] -> obsolete: default policy globally applied (current : IsAuthenticated)
+# in_use: create(), destroy()
+# @permission_classes([AllowAny]) -> obsolete: default policy (IsAuthenticated) applied globally
 class MessageViewset(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     throttle_scope = "messaging"
@@ -77,11 +71,17 @@ class MessageViewset(viewsets.ModelViewSet):
         return messages
 
     # create a new message
-    # check if room exists before adding, create new room if not
     def create(self, request, *args, **kwargs):
         message_data = request.data
+        if "sender" not in message_data or "recipient" not in message_data or "title" not in message_data:
+            raise serializers.ValidationError("Invalid/missing field in POST request.")
         sender = message_data["sender"]
         recipient = message_data["recipient"]
+        title = message_data["title"]
+        body = message_data["body"]
+        if len(sender) == 0 or len(recipient) == 0 or len(title) == 0:
+            raise serializers.ValidationError("Please fill out sender/recipient/title.")
+
         room = Room.objects.filter(
             (Q(user1=sender) & Q(user2=recipient)) |
             (Q(user1=recipient) & Q(user2=sender))
@@ -102,14 +102,13 @@ class MessageViewset(viewsets.ModelViewSet):
         new_message = Message.objects.create(room=room,
                                              sender=sender,
                                              recipient=recipient,
-                                             title=message_data["title"],
-                                             body=message_data["body"])
+                                             title=title,
+                                             body=body)
         new_message.save()
         serializer = MessageSerializer(new_message)
         return Response(serializer.data)
 
-    # used to delete a message with {message.id}
-    # the DELETE result of /messaging/messages/{message.id}
+    # delete a message with {message.id}
     def destroy(self, request, *args, **kwargs):
         curUser = request.user
         message = self.get_object()
@@ -122,16 +121,22 @@ class MessageViewset(viewsets.ModelViewSet):
 
         return Response({'message': response_message})
 
+
+'''#obsolete/learning area
+class MessageListView(ListAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageListSerializer
+class MessageDetailView(RetrieveAPIView):
+    queryset = Message.objects.all()
+    serializer_class = MessageDetailSerializer
     def list(self, request):
         curUser = request.user
         # messages where the curUser takes part of
         usersMessages = Message.objects.filter(
             Q(sender=curUser.username) | Q(recipient=curUser.username))
-
         serializer = MessageSerializer(usersMessages, many=True)
-
         return Response(serializer.data)
-
+class MessageViewset(viewsets.ModelViewSet):
     # [DEPRECATED] this the GET result of /messaging/messages/{otherUser}
     # this will show the messages between the user and the otherUser
     # this will be used for the Inbox
@@ -145,15 +150,4 @@ class MessageViewset(viewsets.ModelViewSet):
         )
         serializer = MessageSerializer(chatHistory, many=True)
         return Response(serializer.data)
-
-
-'''#obsolete/learning area
-
-class MessageListView(ListAPIView):
-    queryset = Message.objects.all()
-    serializer_class = MessageListSerializer
-class MessageDetailView(RetrieveAPIView):
-    queryset = Message.objects.all()
-    serializer_class = MessageDetailSerializer
-
 '''

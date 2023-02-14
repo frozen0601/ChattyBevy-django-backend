@@ -1,5 +1,4 @@
 from django.db import models
-from django.contrib.auth.models import User
 
 # the Room model holds the unique pair of two users in a chat room
 class Room(models.Model):
@@ -13,9 +12,9 @@ class Room(models.Model):
 # Messages related to a Room (chat) will be deleted when the Room is deleted
 class Message(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    sender = models.CharField(max_length=100)
-    recipient = models.CharField(max_length=100)
-    title = models.CharField(max_length=100)
+    sender = models.CharField(max_length=100, null=False, blank=False)
+    recipient = models.CharField(max_length=100, null=False, blank=False)
+    title = models.CharField(max_length=100, null=False, blank=False)
     body = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 

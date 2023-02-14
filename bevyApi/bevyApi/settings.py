@@ -96,6 +96,7 @@ REST_FRAMEWORK = {
         'dj_rest_auth': '30/min',
 
     },
+    "EXCEPTION_HANDLER": "bevyApi.urls.api_exception_handler",
     # TODO: reenable pagination when frontend support is available
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 'PAGE_SIZE': 3,
@@ -216,3 +217,5 @@ STATIC_URL = '/static/'
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = 'rest-auth'
