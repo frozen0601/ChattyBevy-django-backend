@@ -3,6 +3,8 @@ A Back End Coding Test Project.
 
 Here is the [Kanban board](https://github.com/users/frozen0601/projects/1) for tracking this project.
 
+**Commits in this branch are constrained to work with [ChattyBevy-frontend](https://github.com/frozen0601/ChattyBevy-frontend). For further changes that might alter the JSON response, such as the paginated JSON response for returning messages, are commited to the branch [structuralChanges](https://github.com/frozen0601/ChattyBevy-django-backend/tree/structuralChanges)**
+
 ## Setup
 1. Clone the project
 2. Move to the project file
