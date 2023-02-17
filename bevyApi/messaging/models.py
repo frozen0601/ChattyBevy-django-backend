@@ -1,25 +1,29 @@
 from django.db import models
+from django.contrib.auth import get_user_model
 
-# the Room model holds the unique pair of two users in a chat room
+
+User = get_user_model()
+
+
 class Room(models.Model):
-    user1 = models.CharField(max_length=100)
-    user2 = models.CharField(max_length=100)
+    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms1')
+    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms2')
+    # created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user1', 'user2')
 
     def __str__(self):
-        return "user1: " + self.user1 + " user2: " + self.user2
+        return f"{self.user1} - {self.user2}"
 
 
-# Messages related to a Room (chat) will be deleted when the Room is deleted
 class Message(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    sender = models.CharField(max_length=100, null=False, blank=False)
-    recipient = models.CharField(max_length=100, null=False, blank=False)
-    title = models.CharField(max_length=100, null=False, blank=False)
-    body = models.TextField()
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
+    recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
+    title = models.CharField(max_length=255)
+    body = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # class Meta:
-    #     ordering = ['created_at']
-
     def __str__(self):
-        return self.sender + " to " + self.recipient + ": " + self.title
+        return f"{self.sender} to {self.recipient} - {self.title}"

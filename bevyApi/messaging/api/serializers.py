@@ -34,40 +34,46 @@ class MessageSerializer(serializers.ModelSerializer):
         model = Message
         fields = [
             'id',
-            'room_id',
             'sender',
             'recipient',
             'title',
             'body',
-            'created_at',
         ]
 
-        def validate(self, data):
-            sender = data.get('sender')
-            recipient = data.get('recipient')
-            title = data.get('title')
-            body = data.get('body')
+    def validate(self, data):
+        sender = data.get('sender')
+        recipient = data.get('recipient')
+        title = data.get('title')
+        body = data.get('body')
 
-            if not sender:
-                raise serializers.ValidationError("Sender is required.")
+        if sender is None:
+            raise serializers.ValidationError("Sender field is required.")
+        if recipient is None:
+            raise serializers.ValidationError("Recipient field is required.")
+        if title is None:
+            raise serializers.ValidationError("Title field is required.")
+        if body is None:
+            raise serializers.ValidationError("Body field is required.")
 
-            if not recipient:
-                raise serializers.ValidationError("Recipient is required.")
+        if sender == recipient:
+            raise serializers.ValidationError("Sender and Recipient cannot be the same.")
 
-            if not title:
-                raise serializers.ValidationError("Title is required.")
+        return data
 
-            if not body:
-                raise serializers.ValidationError("Body is required.")
-
-    # def create(self, validated_data: str) -> Message:
-    #     return Message.objects.create(**validated_data)
 
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = [
-            'id',
-            'user1',
-            'user2',
-        ]
+        fields = ['id', 'user1', 'user2']
+
+    def validate(self, data):
+        user1 = data.get('user1')
+        user2 = data.get('user2')
+
+        if user1 is None or user2 is None:
+            raise serializers.ValidationError("User1 and User2 fields are required.")
+
+        if user1 == user2:
+            raise serializers.ValidationError("User1 and User2 cannot be the same.")
+
+        return data
