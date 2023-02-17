@@ -45,11 +45,10 @@ class RoomViewset(viewsets.ModelViewSet):
         if not _has_room_permission(request.user, room_id):
             return Response({'message': "no permission to view this room"})
         messages = Message.objects.filter(room_id=room_id)
-        paginator = StandardResultsSetPagination()
+        paginator = self.pagination_class()
         page = paginator.paginate_queryset(messages, request)
         serializer = MessageSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)
-
 
 class MessageViewset(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
@@ -63,7 +62,6 @@ class MessageViewset(viewsets.ModelViewSet):
     # create a new message
     def create(self, request, *args, **kwargs):
         serializer = MessageSerializer(data=request.data)
-        print("wwwwwwww")
         if serializer.is_valid():
             # make sure the message is sent by the current user
             if request.user.id != serializer.validated_data['sender']:
