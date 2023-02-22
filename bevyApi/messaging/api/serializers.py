@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from messaging.models import Message, Room
 
-
 class MessageDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
@@ -60,20 +59,42 @@ class MessageSerializer(serializers.ModelSerializer):
 
         return data
 
+    def __str__(self):
+        return f'Message from {self.sender} to {self.recipient} ({self.title})'
+
+# class RoomSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = Room
+#         fields = ['id', 'user1', 'user2']
+
+#     def validate(self, data):
+#         user1 = data.get('user1')
+#         user2 = data.get('user2')
+
+#         if user1 is None or user2 is None:
+#             raise serializers.ValidationError("User1 and User2 fields are required.")
+
+#         if user1 == user2:
+#             raise serializers.ValidationError("User1 and User2 cannot be the same.")
+
+#         return data
 
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
-        fields = ['id', 'user1', 'user2']
+        fields = ['id', 'users']
 
     def validate(self, data):
-        user1 = data.get('user1')
-        user2 = data.get('user2')
+        users = data.get('users')
 
-        if user1 is None or user2 is None:
-            raise serializers.ValidationError("User1 and User2 fields are required.")
+        if len(users) != 2:
+            raise serializers.ValidationError("Room must have exactly 2 users.")
 
-        if user1 == user2:
-            raise serializers.ValidationError("User1 and User2 cannot be the same.")
+        if users[0] == users[1]:
+            raise serializers.ValidationError("Users cannot be the same.")
 
         return data
+
+    def __str__(self):
+        users = ", ".join([str(user) for user in self.validated_data['users']])
+        return self.id, ", ".join([user.username for user in users.all()])

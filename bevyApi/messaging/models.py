@@ -6,15 +6,10 @@ User = get_user_model()
 
 
 class Room(models.Model):
-    user1 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms1')
-    user2 = models.ForeignKey(User, on_delete=models.CASCADE, related_name='rooms2')
-    # created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        unique_together = ('user1', 'user2')
+    users = models.ManyToManyField(User)
 
     def __str__(self):
-        return f"{self.user1} - {self.user2}"
+        return f"{self.id}, {', '.join(str(user) for user in self.users.all())}"
 
 
 class Message(models.Model):
