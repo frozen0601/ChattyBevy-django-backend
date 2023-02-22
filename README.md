@@ -189,18 +189,19 @@ The APIs provided by [SimpleJWT](https://github.com/SimpleJWT/drf-SimpleJWT-Reac
  
  **Access Control** on composing/viewing/deleting messages should be protected thoroughly.
  
+ **Uniform Error Return** is managed by an api exception handler.
+ 
  
  ## TODOs & notes & learned
  ### TODO Features
   - Applies pagination thoroughly.
-  - Manage a unifiy error raising interface.
   
  ### TODO Refactor
- - Refactor code to handle malicious inputs.
-    -  POST with fields/fields value altered
-    -  Malformed hidden field
- - Refactor message composing mechanism.
-    The current code check if room exists whenever a message is sent. Refactor it as:
+ - ~~Refactor code to handle malicious inputs.~~
+    -  ~~POST with fields/fields value altered~~
+    -  ~~Malformed hidden field~~
+ - ~~Refactor message composing mechanism.~~
+    ~~The current code check if room exists whenever a message is sent. Refactor it as:~~
         
     ```python
     if "room_id" not in request.POST:
@@ -209,7 +210,7 @@ The APIs provided by [SimpleJWT](https://github.com/SimpleJWT/drf-SimpleJWT-Reac
     ```
         
  ### TODO Bug Fix
- - Fix a bug related to deleting user.
+ - ~~Fix a bug related to deleting user.~~
  
  ### Others
  - Unit testing.
