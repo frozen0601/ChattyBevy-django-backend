@@ -52,7 +52,7 @@ class RoomViewset(viewsets.ModelViewSet):
             serializer = MessageSerializer(chatHistory, many=True)
             return Response(serializer.data)
         else:
-            return Response({'message': "no permission to view this room"})
+            raise serializers.ValidationError("No permission to view this room.")
 
 
 # check if a user has access to the room with roomID
@@ -78,7 +78,7 @@ class MessageViewset(viewsets.ModelViewSet):
         if serializer.is_valid():
             # make sure the message is send by current user
             if request.user.username != serializer.validated_data['sender']:
-                return Response({'error': 'The sender must be the current user'}, status=status.HTTP_400_BAD_REQUEST)
+                raise serializers.ValidationError("The sender must be the current user.")
 
             message_data = serializer.validated_data
             sender = message_data["sender"]
@@ -91,15 +91,9 @@ class MessageViewset(viewsets.ModelViewSet):
 
             # create a new room if the room does not already exist
             if not room.exists():
-                new_room = Room.objects.create(user1=sender,
+                room = Room.objects.create(user1=sender,
                                             user2=recipient)
-                new_room.save()
-
-            # get the corresponding room
-            room = Room.objects.filter(
-                (Q(user1=sender) & Q(user2=recipient)) |
-                (Q(user1=recipient) & Q(user2=sender))
-            ).first()
+                room.save()
 
             new_message = Message.objects.create(room=room,
                                                 sender=sender,
@@ -111,7 +105,6 @@ class MessageViewset(viewsets.ModelViewSet):
 
         # No permission to delete
         raise serializers.ValidationError("Invalid request.")
-        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # delete a message with {message.id}
     def destroy(self, request, *args, **kwargs):
@@ -123,37 +116,5 @@ class MessageViewset(viewsets.ModelViewSet):
             response_message = {'message': "Item deleted successfully"}
         else:
             raise serializers.ValidationError("No permission to delete.")
-            # response_message = {'message': "No permission to delete"}
 
         return Response({'message': response_message})
-
-
-'''#obsolete/learning area
-class MessageListView(ListAPIView):
-    queryset = Message.objects.all()
-    serializer_class = MessageListSerializer
-class MessageDetailView(RetrieveAPIView):
-    queryset = Message.objects.all()
-    serializer_class = MessageDetailSerializer
-    def list(self, request):
-        curUser = request.user
-        # messages where the curUser takes part of
-        usersMessages = Message.objects.filter(
-            Q(sender=curUser.username) | Q(recipient=curUser.username))
-        serializer = MessageSerializer(usersMessages, many=True)
-        return Response(serializer.data)
-class MessageViewset(viewsets.ModelViewSet):
-    # [DEPRECATED] this the GET result of /messaging/messages/{otherUser}
-    # this will show the messages between the user and the otherUser
-    # this will be used for the Inbox
-    def retrieve(self, request, *args, **kwargs):
-        params = kwargs
-        otherUser = params['pk']
-        curUser = request.user
-        chatHistory = Message.objects.filter(
-            (Q(sender=curUser.username) & Q(recipient=otherUser)) |
-            (Q(sender=otherUser) & Q(recipient=curUser.username))
-        )
-        serializer = MessageSerializer(chatHistory, many=True)
-        return Response(serializer.data)
-'''

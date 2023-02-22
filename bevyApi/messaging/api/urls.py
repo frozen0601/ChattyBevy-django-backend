@@ -55,11 +55,3 @@ def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response:
             error["details"] = response.data
             response.data = error_payload
         return response
-
-
-# # obsolete/learning paths
-
-# path('first/', views.firstFunction, name='firstFunction'),
-# path('room/<int:>/', include(router2.urls)),
-# path('view/', MessageListView.as_view(), name='messaging_list'),
-# path('view/<int:pk>/', MessageDetailView.as_view(), name='messaging_detail'),
