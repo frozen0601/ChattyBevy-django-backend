@@ -25,7 +25,6 @@ urlpatterns = [
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
     # messaging/: for the messaging app
-    # path('messaging/', include(('messaging.api.urls', 'Message'), namespace='messaging')),
     path('messaging/', include(('messaging.api.urls', 'messaging'), namespace='messaging')),
 ]
 

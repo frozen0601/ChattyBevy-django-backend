@@ -26,20 +26,6 @@ class RoomViewset(viewsets.ModelViewSet):
         )
         return rooms
 
-    # create a new room
-    def create(self, request, *args, **kwargs):
-        room_data = request.data
-        if "user1" not in room_data or "user2" not in room_data:
-            raise serializers.ValidationError("Invalid/missing field in POST request.")
-        user1 = room_data["user1"]
-        user2 = room_data["user2"]
-        if user1 == user2:
-            raise serializers.ValidationError("User1 and User2 cannot be the same.")
-        new_room = Room.objects.create(user1=user1, user2=user2)
-        new_room.save()
-        serializer = RoomSerializer(new_room)
-        return Response(serializer.data)
-
     # retrieve the rooms that correspond to the current user
     def retrieve(self, request, *args, **kwargs):
         params = kwargs
@@ -52,15 +38,16 @@ class RoomViewset(viewsets.ModelViewSet):
             serializer = MessageSerializer(chatHistory, many=True)
             return Response(serializer.data)
         else:
-            raise serializers.ValidationError("No permission to view this room.")
+            raise serializers.ValidationError(
+                "No permission to view this room.")
 
 
 # check if a user has access to the room with roomID
 def _has_room_permission(user, roomID):
-        room = Room.objects.filter(Q(user1=user) | Q(user2=user), id=roomID)
-        return room.exists()
+    room = Room.objects.filter(Q(user1=user) | Q(user2=user), id=roomID)
+    return room.exists()
 
-# in_use: create(), destroy()
+
 # @permission_classes([AllowAny]) -> obsolete: default policy (IsAuthenticated) applied globally
 class MessageViewset(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
@@ -71,42 +58,41 @@ class MessageViewset(viewsets.ModelViewSet):
         messages = Message.objects.all()
         return messages
 
-    # create a new message
+    # Create a new message
     def create(self, request, *args, **kwargs):
         serializer = MessageSerializer(data=request.data)
-
         if serializer.is_valid():
-            # make sure the message is send by current user
-            if request.user.username != serializer.validated_data['sender']:
-                raise serializers.ValidationError("The sender must be the current user.")
-
             message_data = serializer.validated_data
             sender = message_data["sender"]
             recipient = message_data["recipient"]
 
-            room = Room.objects.filter(
-                (Q(user1=sender) & Q(user2=recipient)) |
-                (Q(user1=recipient) & Q(user2=sender))
-            )
+            # Make sure the message is send by current user.
+            if request.user.username != sender:
+                raise serializers.ValidationError(
+                    "The sender must be the current user.")
 
-            # create a new room if the room does not already exist
-            if not room.exists():
-                room = Room.objects.create(user1=sender,
-                                            user2=recipient)
-                room.save()
+            # Get room. If room not exist, create a new one.
+            try:
+                room = Room.objects.get(
+                    (Q(user1=sender) & Q(user2=recipient)) |
+                    (Q(user1=recipient) & Q(user2=sender))
+                )
+            except Room.DoesNotExist:
+                room = Room.objects.create(user1=sender, user2=recipient)
 
-            new_message = Message.objects.create(room=room,
-                                                sender=sender,
-                                                recipient=recipient,
-                                                title=message_data["title"],
-                                                body=message_data.get("body", ""))
-            new_message.save()
+            # Create message
+            Message.objects.create(room=room,
+                                   sender=sender,
+                                   recipient=recipient,
+                                   title=message_data["title"],
+                                   body=message_data.get("body", ""))
+
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-        # No permission to delete
-        raise serializers.ValidationError("Invalid request.")
+        # Invalid input in fields
+        raise serializers.ValidationError("Field value invalid. Invalid request.")
 
-    # delete a message with {message.id}
+    # Delete a message with {message.id}
     def destroy(self, request, *args, **kwargs):
         curUser = request.user
         message = self.get_object()
