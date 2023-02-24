@@ -1,33 +1,6 @@
 from rest_framework import serializers
 from messaging.models import Message, Room
 
-class MessageDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Message
-        fields = [
-            'id',
-            'sender',
-            'recipient',
-            'title',
-            'body',
-            'created_at',
-        ]
-
-
-class MessageListSerializer(serializers.ModelSerializer):
-    message_details = serializers.HyperlinkedIdentityField(
-        view_name='messaging:messaging_detail')
-
-    class Meta:
-        model = Message
-        fields = [
-            'id',
-            'room_id',
-            'title',
-            'message_details',
-        ]
-
-
 class MessageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
@@ -61,23 +34,6 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def __str__(self):
         return f'Message from {self.sender} to {self.recipient} ({self.title})'
-
-# class RoomSerializer(serializers.ModelSerializer):
-#     class Meta:
-#         model = Room
-#         fields = ['id', 'user1', 'user2']
-
-#     def validate(self, data):
-#         user1 = data.get('user1')
-#         user2 = data.get('user2')
-
-#         if user1 is None or user2 is None:
-#             raise serializers.ValidationError("User1 and User2 fields are required.")
-
-#         if user1 == user2:
-#             raise serializers.ValidationError("User1 and User2 cannot be the same.")
-
-#         return data
 
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:

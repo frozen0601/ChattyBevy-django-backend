@@ -12,7 +12,7 @@ from rest_framework import exceptions
 
 router = DefaultRouter()
 router.register('room', RoomViewset, basename='room')
-router.register('room/(?P<room_id>[^/.]+)/message',
+router.register('room/(?P<room_id>[0-9]+|#)/message',
                 MessageViewset, basename='message')
 
 

@@ -1,10 +1,13 @@
+from django.shortcuts import get_object_or_404
 from rest_framework.response import Response
 from rest_framework import viewsets, serializers, status
 from .serializers import MessageSerializer, RoomSerializer
 from messaging.models import Message, Room
 from rest_framework.pagination import PageNumberPagination
+from django.db import IntegrityError
 # for sql operations
-from django.db.models import Q
+from django.db.models import Count
+
 
 
 class StandardResultsSetPagination(PageNumberPagination):
@@ -44,6 +47,8 @@ class MessageViewset(viewsets.ModelViewSet):
         messages = Message.objects.all()
         return messages
 
+
+
     # create a new message
     def create(self, request, *args, **kwargs):
         serializer = MessageSerializer(data=request.data)
@@ -57,12 +62,7 @@ class MessageViewset(viewsets.ModelViewSet):
             if request.user.id != sender.id:
                 raise serializers.ValidationError("The sender must be the current user.")
 
-            # create a new room if the room does not already exist and check if both users belong to the room
             room = _get_room(sender, recipient, room_id)
-            if not room:
-                raise serializers.ValidationError("Room not found.")
-            elif not room.users.filter(id=sender.id).exists() or not room.users.filter(id=recipient.id).exists():
-                raise serializers.ValidationError("User does not belong to the room.")
 
             new_message = Message.objects.create(room=room,
                                                 sender_id=sender.id,
@@ -73,6 +73,7 @@ class MessageViewset(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
 
         raise serializers.ValidationError("Field input not valid. Invalid request.")
+
 
     # delete a message with {message.id}
     def destroy(self, request, *args, **kwargs):
@@ -94,15 +95,15 @@ def _has_room_permission(user, roomID):
     return room.exists()
 
 def _get_room(sender, recipient, room_id):
-    # create new room
     if room_id == "#":
-        new_room = Room.objects.create()
-        new_room.users.add(sender, recipient)
-        new_room.save()
-        return new_room
-    # get existing room
-    try:
-        room = Room.objects.get(id=room_id)
-        return room
-    except Room.DoesNotExist:
-        return None
+        # check if a room already exists for the sender and recipient
+        room, created = Room.objects.get_or_create(users=sorted([sender, recipient]))
+        if not created:
+            # If a Room with the same users already exists, retrieve it instead
+            room = Room.objects.get(users=sender)
+    else:
+        # retrieve the existing room with the given room_id
+        room = get_object_or_404(Room, id=room_id)
+        if not room.users.filter(id=sender.id).exists() or not room.users.filter(id=recipient.id).exists():
+            raise serializers.ValidationError("User does not belong to the room.")
+    return room

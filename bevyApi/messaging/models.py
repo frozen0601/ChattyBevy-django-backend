@@ -8,6 +8,11 @@ User = get_user_model()
 class Room(models.Model):
     users = models.ManyToManyField(User)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['users'], name='unique_users'),
+        ]
+
     def __str__(self):
         return f"{self.id}, {', '.join(str(user) for user in self.users.all())}"
 
