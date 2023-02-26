@@ -76,7 +76,7 @@ Django REST framework comes with authentication methods such as session/token au
 JWT authentication is good because it allows for stateless, secure transmission of information between client and server.
 JWT tokens can be signed and encrypted for added security. They are also compact, allowing for efficient storage and transfer.
 This makes JWT a suitable choice for RESTful API authentication.
-` - openGPT
+` - chatGPT
 
 The APIs provided by [SimpleJWT](https://github.com/SimpleJWT/drf-SimpleJWT-React) is used to provide the required authentication services.
 
