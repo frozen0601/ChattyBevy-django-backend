@@ -11,7 +11,7 @@ class Room(models.Model):
 
 # Messages related to a Room (chat) will be deleted when the Room is deleted
 class Message(models.Model):
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, db_index=True)
     sender = models.CharField(max_length=100, null=False, blank=False)
     recipient = models.CharField(max_length=100, null=False, blank=False)
     title = models.CharField(max_length=100, null=False, blank=False)
