@@ -91,12 +91,13 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         # 'anon': '43200/day',
         # 'user': '86400/day',
-        'room': '60/min',
-        'messaging': '60/min',
-        'dj_rest_auth': '30/min',
+        'room': '600/min',
+        'messaging': '600/min',
+        'dj_rest_auth': '300/min',
 
     },
     "EXCEPTION_HANDLER": "bevyApi.urls.api_exception_handler",
+    'DATETIME_FORMAT': "%Y-%m-%d %H:%M:%S",
     # TODO: reenable pagination when frontend support is available
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 'PAGE_SIZE': 3,
@@ -204,7 +205,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'US/Eastern'
 
 USE_I18N = True
 
